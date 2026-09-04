@@ -4,6 +4,7 @@ Usage:
     nowhere                       # stdio MCP server (also: python -m nowhere.server)
     nowhere --web                 # stdio MCP + web observer (auto-picked port)
     nowhere --web 8080            # stdio MCP + web observer on port 8080
+    nowhere --http                # Streamable HTTP MCP server on 0.0.0.0:$PORT/mcp
 
 With uvx (no install needed):
     uvx nowhere-mcp --web
@@ -6692,9 +6693,33 @@ def main() -> None:
         help="启动网页旁观者 (不给端口=自动选端口；--web 8080=指定端口)",
     )
     parser.add_argument("--web-only", type=int, default=None, help="Web observer port (standalone, no MCP)")
+    parser.add_argument(
+        "--http",
+        action="store_true",
+        help="通过 Streamable HTTP 在 0.0.0.0:$PORT/mcp 启动 MCP（PORT 默认 8000）",
+    )
     args = parser.parse_args()
 
-    if args.web_only is not None:
+    if args.http and (args.web is not None or args.web_only is not None):
+        parser.error("--http cannot be combined with --web or --web-only")
+
+    if args.http:
+        try:
+            port = int(os.environ.get("PORT", "8000"))
+        except ValueError:
+            parser.error("PORT must be an integer")
+        if not 1 <= port <= 65535:
+            parser.error("PORT must be between 1 and 65535")
+
+        # FastMCP's HTTP transport implements MCP Streamable HTTP. Keeping this
+        # as a separate mode leaves the default stdio transport untouched.
+        mcp.run(
+            transport="streamable-http",
+            host="0.0.0.0",
+            port=port,
+            path="/mcp",
+        )
+    elif args.web_only is not None:
         import uvicorn
         from nowhere.web import app as web_app
         uvicorn.run(web_app, host="0.0.0.0", port=args.web_only, log_level="info")

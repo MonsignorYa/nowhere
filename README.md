@@ -64,6 +64,35 @@ pip install -e ".[dev]"
 >
 > 包发布到 PyPI 后，可以直接 `uvx nowhere-mcp --web`，无需克隆。
 
+### Deploy to Render / ChatGPT Remote MCP
+
+Nowhere 同时保留上面的本地 stdio 启动方式，并提供独立的 Streamable HTTP
+模式供 ChatGPT 远程连接。Render 配置如下：
+
+- **服务类型（Service Type）**：Web Service
+- **Runtime**：Python 3
+- **Build Command**：`pip install .`
+- **Start Command**：`python -m nowhere.server --http`
+
+需要/可以设置的环境变量：
+
+| 环境变量 | 配置 |
+|----------|------|
+| `PORT` | Render 会自动注入，服务优先读取它；本地未设置时默认 `8000`。 |
+| `NOWHERE_HOME` | 可选，继续用于指定数据目录。使用 Render Persistent Disk 时可设为其挂载目录（例如 `/var/data/nowhere`）；不设置则使用 `~/.nowhere`。 |
+| `NOWHERE_SEED` | 可选，仅在需要固定随机结果时设置。 |
+
+部署成功后，在 ChatGPT 的自定义 MCP 连接中填写：
+
+```text
+https://<render-domain>/mcp
+```
+
+远程进程监听 `0.0.0.0`，使用 Streamable HTTP，MCP 路径固定为
+`/mcp`。本地开发也可运行 `PORT=8000 python -m nowhere.server --http`，
+然后连接 `http://localhost:8000/mcp`。原有 `--web` 和 `--web-only` 网页
+旁观者模式不受影响。
+
 3. 然后跟 AI 说：
 - "开门" — 随机降落到地球上某个地方
 - "开门去北京" — 降落在北京
