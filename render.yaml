@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: nowhere-mcp
+    runtime: python
+    buildCommand: pip install .
+    startCommand: python -m nowhere.server --http
